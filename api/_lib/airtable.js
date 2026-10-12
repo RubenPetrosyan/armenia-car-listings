@@ -44,7 +44,7 @@ function req(method, path, data) {
   });
 }
 
-const esc = (s) => String(s == null ? '' : s).replace(/'/g, "\\'");
+const esc = (s) => String(s == null ? '' : s).replace(/'/g, "\'");
 
 async function listAll(table, params = {}) {
   const out = [];
@@ -65,7 +65,15 @@ module.exports = {
   listAll,
   list(table, params = {}) {
     const q = new URLSearchParams();
-    for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== '') q.set(k, v);
+    for (const [k, v] of Object.entries(params)) {
+      if (v === undefined || v === null || v === '') continue;
+      if (k === 'sort' && Array.isArray(v)) {
+        v.forEach((s, i) => {
+          q.set(`sort[${i}][field]`, s.field);
+          q.set(`sort[${i}][direction]`, s.direction || 'asc');
+        });
+      } else q.set(k, v);
+    }
     const qs = q.toString();
     return req('GET', `/${BASE}/${encodeURIComponent(table)}${qs ? '?' + qs : ''}`);
   },
